@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>ECG Model Tester</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "@litertjs/core": "https://esm.sh/@litertjs/core@2.6.0",
+      "@litertjs/wasm-utils": "https://esm.sh/@litertjs/wasm-utils@2.6.0"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <main class="shell">
+
+    <header>
+      <div>
+        <p class="eyebrow">Embedded AI · ECG</p>
+
+        <h1>ECG Model Tester</h1>
+
+        <p class="sub">
+          Evaluate optimized ECG classification models directly in the browser
+          using a validated balanced test dataset.
+        </p>
+      </div>
+
+      <span id="runtimeBadge" class="badge">
+        Runtime: loading…
+      </span>
+    </header>
+
+
+    <section class="panel controls">
+
+      <label>
+        Model
+
+        <select id="modelSelect">
+          <option value="colab">
+            Colab · Weight-only quantization
+          </option>
+
+          <option value="jupyter">
+            Jupyter · Weight-only quantization
+          </option>
+          <option value="edge">
+            Edge Impulse · Quantized INT8
+          </option>
+        </select>
+      </label>
+
+
+      <label>
+        Validated ECG dataset (.csv)
+
+        <input
+          id="fileInput"
+          type="file"
+          accept=".csv,text/csv"
+        />
+      </label>
+
+
+      <div class="buttons">
+        <button id="analyzeBtn" disabled>
+          Analyze ECG
+        </button>
+      </div>
+
+
+      <div id="progressBlock" class="progress-block hidden">
+
+        <div class="progress-header">
+          <span>Processing ECG</span>
+          <strong id="progressText">0 / 0</strong>
+        </div>
+
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <section class="panel summary-panel">
+
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Analysis result</p>
+          <h2>ECG summary</h2>
+        </div>
+      </div>
+
+      <div id="finalResult" class="prediction">
+        —
+      </div>
+
+      <div id="finalDescription" class="confidence">
+        Load a validated ECG dataset to begin.
+      </div>
+
+      <p class="result-note">
+        Classification result for the uploaded validation dataset.
+        This interface is intended for model evaluation only.
+      </p>
+
+
+      <div class="summary-grid">
+
+        <div class="metric-box">
+          <span>Total segments</span>
+          <strong id="totalSegments">—</strong>
+        </div>
+
+        <div class="metric-box">
+          <span>Predicted normal</span>
+          <strong id="normalPredicted">—</strong>
+        </div>
+
+        <div class="metric-box">
+          <span>Predicted arrhythmia</span>
+          <strong id="arrhythmiaPredicted">—</strong>
+        </div>
+
+        <div class="metric-box">
+          <span>Average confidence</span>
+          <strong id="avgConfidence">—</strong>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <section class="grid">
+
+      <article class="panel">
+
+        <h2>Validation metrics</h2>
+
+        <div class="metric-large-grid">
+
+          <div>
+            <span>Accuracy</span>
+            <strong id="accuracy">—</strong>
+          </div>
+
+          <div>
+            <span>Precision</span>
+            <strong id="precision">—</strong>
+          </div>
+
+          <div>
+            <span>Recall</span>
+            <strong id="recall">—</strong>
+          </div>
+
+          <div>
+            <span>F1-score</span>
+            <strong id="f1">—</strong>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <article class="panel">
+
+        <h2>Inference performance</h2>
+
+        <div class="metrics single">
+
+          <div>
+            <span>Average inference</span>
+            <strong id="avgInference">—</strong>
+          </div>
+
+          <div>
+            <span>Minimum inference</span>
+            <strong id="minInference">—</strong>
+          </div>
+
+          <div>
+            <span>Maximum inference</span>
+            <strong id="maxInference">—</strong>
+          </div>
+
+          <div>
+            <span>Total inference time</span>
+            <strong id="totalInference">—</strong>
+          </div>
+
+          <div>
+            <span>Model size</span>
+            <strong id="modelSize">—</strong>
+          </div>
+
+        </div>
+
+      </article>
+
+    </section>
+
+
+    <section class="grid">
+
+      <article class="panel">
+
+        <h2>Confusion matrix</h2>
+
+        <div class="confusion">
+
+          <div class="confusion-empty"></div>
+
+          <div class="confusion-label">
+            Predicted Normal
+          </div>
+
+          <div class="confusion-label">
+            Predicted Arrhythmia
+          </div>
+
+
+          <div class="confusion-label">
+            Actual Normal
+          </div>
+
+          <div class="confusion-cell">
+            <span>TN</span>
+            <strong id="tn">—</strong>
+          </div>
+
+          <div class="confusion-cell">
+            <span>FP</span>
+            <strong id="fp">—</strong>
+          </div>
+
+
+          <div class="confusion-label">
+            Actual Arrhythmia
+          </div>
+
+          <div class="confusion-cell">
+            <span>FN</span>
+            <strong id="fn">—</strong>
+          </div>
+
+          <div class="confusion-cell">
+            <span>TP</span>
+            <strong id="tp">—</strong>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <article class="panel">
+
+        <h2>Environment</h2>
+
+        <div class="metrics single">
+
+          <div>
+            <span>Environment</span>
+            <strong>Web Browser</strong>
+          </div>
+
+          <div>
+            <span>Platform</span>
+            <strong id="platform">—</strong>
+          </div>
+
+          <div>
+            <span>Architecture</span>
+            <strong id="architecture">—</strong>
+          </div>
+
+          <div>
+            <span>CPU threads</span>
+            <strong id="threads">—</strong>
+          </div>
+
+          <div>
+            <span>Model input</span>
+            <strong id="inputInfo">—</strong>
+          </div>
+
+        </div>
+
+      </article>
+
+    </section>
+
+
+    <section class="panel chart-panel">
+
+      <div class="chart-head">
+
+        <div>
+          <h2>ECG signal</h2>
+
+          <p id="fileStatus">
+            No ECG dataset loaded.
+          </p>
+        </div>
+
+        <span id="sampleCount" class="badge">
+          0 segments
+        </span>
+
+      </div>
+
+
+      <canvas
+        id="ecgCanvas"
+        width="1400"
+        height="380"
+      ></canvas>
+
+
+      <p class="chart-note">
+        The graph displays the ECG data from the uploaded validation dataset.
+        Long signals are downsampled for visualization only and are not modified
+        before inference.
+      </p>
+
+    </section>
+
+
+    <section class="panel log-panel">
+
+      <h2>Technical details</h2>
+
+      <pre id="log">Ready.</pre>
+
+    </section>
+
+  </main>
+
+
+  <script
+    type="module"
+    src="./app.js"
+  ></script>
+
+</body>
+</html>
